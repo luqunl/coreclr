@@ -98,14 +98,12 @@ class Test
     public static int Main(string[] args)
     {
 #pragma warning disable 0219
-        string strManaged = "Managed";
+        string strManaged = "Managed\0String\0";
         string strRet = "a";
         StringBuilder strBRet = new StringBuilder("a", 1);
         string strNative = " Native";
         StringBuilder strBNative = new StringBuilder(" Native", 7);
 #pragma warning restore 0219
-
-        PInvokeDef.Writeline("Format i=%d c=%c d=%f, s=%d, u=%d", 100, 'A', 3.1415926, 32767, 32768);
 
         //since the out attributes doesnt work for string, so i dont check the out value.
         string strPara2 = strManaged;

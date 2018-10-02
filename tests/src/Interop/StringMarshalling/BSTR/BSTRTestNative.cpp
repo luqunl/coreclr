@@ -4,14 +4,14 @@
 
 #include "platformdefines.h"
 
-WCHAR* strManaged = L("Managed\0String\0");
-size_t   lenstrManaged = 14; // the byte length of strManaged
+WCHAR strManaged[] = W("Managed\0String\0");
+size_t lenstrManaged = sizeof(strManaged) - sizeof(WCHAR); // the byte 
 
-WCHAR* strReturn = L("a\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0");
-WCHAR* strerrReturn = L("error");
+WCHAR strReturn[] = W("a\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0");
+WCHAR strerrReturn[] = W("error");
 
-WCHAR* strNative = L(" Native\0String\0");
-size_t lenstrNative = 14; //the byte len of strNative
+WCHAR strNative[] = W(" Native\0String\0");
+size_t lenstrNative = sizeof(strNative) - sizeof(WCHAR); //the byte len of strNative
 
 //Test Method1
 extern "C" BSTR ReturnString()
@@ -30,7 +30,7 @@ extern "C" DLL_EXPORT BSTR Marshal_InOut(/*[In,Out]*/BSTR s)
     //Check the Input
     size_t len = TP_SysStringByteLen(s);
 
-    if(memcmp(s,strManaged,lenstrManaged)!=0)
+    if(len != lenstrManaged || memcmp(s,strManaged,lenstrManaged) != 0)
     {
         printf("Error in Function Marshal_InOut(Native Client)\n");        
 	printf("Error: Actual: %d, Expected: %d\n",(int32_t) len, (int32_t)lenstrManaged);        
@@ -67,11 +67,12 @@ extern "C" DLL_EXPORT BSTR MarshalPointer_InOut(/*[in,out]*/BSTR *s)
     //Check the Input
     size_t len = TP_SysStringByteLen(*s);
 
-    if(memcmp(*s,strManaged,lenstrManaged)!=0)
+    if(len != lenstrManaged || memcmp(*s,strManaged,lenstrManaged)!=0)
     {
         printf("Error in Function MarshalPointer_InOut\n");
 	printf("Error: Expected: %d, Actual: %d", (int32_t)lenstrManaged, (int32_t)len);        
-        for(size_t i = 0; i< lenstrManaged;++i)
+        
+	for(size_t i = 0; i< lenstrManaged;++i)
             putchar(*(((char *)strManaged)+i));
                 
         for( size_t j = 0; j < len; ++j)
@@ -84,7 +85,6 @@ extern "C" DLL_EXPORT BSTR MarshalPointer_InOut(/*[in,out]*/BSTR *s)
     TP_SysFreeString(*s);
     *s = TP_SysAllocString(strNative);
     
-    
     //Return
     return ReturnString();
 }
@@ -95,39 +95,22 @@ extern "C" DLL_EXPORT BSTR MarshalPointer_Out(/*[out]*/ BSTR *s)
     return ReturnString();
 }
 
-extern "C" DLL_EXPORT int Writeline(char * pFormat, int i, char c, double d, short s, unsigned u)
-{
-	int sum = i;
-	for (size_t it = 0; it < strlen(pFormat); it++)
-	{
-		sum += (int)(*pFormat);
-	}	
-	sum += (int)c;
-	sum += (int)d;
-	sum += (int)s;
-	sum += (int)u;
-	return sum;
-}
-
-
 typedef BSTR (__stdcall * Test_DelMarshal_InOut)(/*[in]*/ BSTR s);
 extern "C" DLL_EXPORT BOOL __cdecl RPinvoke_DelMarshal_InOut(Test_DelMarshal_InOut d, /*[in]*/ BSTR s)
 {
     BSTR str = d(s);
-    LPWSTR ret = (LPWSTR)L("Return\0Return\0");    
+    WCHAR ret[] = W("Return\0Return\0");    
 
     size_t lenstr = TP_SysStringByteLen(str);
-    size_t lenret = 28;
+    size_t lenret = sizeof(ret) - sizeof(WCHAR);
 
-    if((lenret != lenstr)||(memcmp(str,ret,lenstr)!=0))
+    if(lenret != lenstr || memcmp(str,ret,lenstr) != 0)
     {
         printf("Error in RPinvoke_DelMarshal_InOut, Returned value didn't match\n");
-        
         return FALSE;
     }
     
     TP_SysFreeString(str);
-
     return TRUE;
 }
 
@@ -140,23 +123,22 @@ extern "C" DLL_EXPORT BOOL __stdcall RPinvoke_DelMarshalPointer_Out(Test_DelMars
     BSTR str;
     BSTR ret = d(&str);
 
-    LPWSTR changedstr = (LPWSTR)L("Native\0String\0");
+    WCHAR changedstr[] = W("Native\0String\0");
 
     size_t lenstr = TP_SysStringByteLen(str);
-    size_t lenchangedstr = 28; // byte length
+    size_t lenchangedstr = sizeof(changedstr) - sizeof(WCHAR); // byte length
 
-    if((lenstr != lenchangedstr)||(memcmp(str,changedstr,lenstr)!=0))
+    if( lenstr != lenchangedstr || (memcmp(str,changedstr,lenstr)!=0))
     {
         printf("Error in RPinvoke_DelMarshalPointer_Out, Value didn't change\n");
-        printf("%d, %d\n", (int32_t)lenchangedstr, (int32_t)lenstr);
         return FALSE;
     }
 
-    LPWSTR expected = (LPWSTR)L("Return\0Return\0");
+    WCHAR expected[] = W("Return\0Return\0");
     size_t lenret = TP_SysStringByteLen(ret);
-    size_t lenexpected = 28;
+    size_t lenexpected = sizeof(expected) - sizeof(WCHAR);
 
-    if((lenret != lenexpected)||(memcmp(ret,expected,lenret)!=0))
+    if(lenret != lenexpected || memcmp(ret,expected,lenret)!=0)
     {
         printf("Error in RPinvoke_DelMarshalPointer_Out, Return vaue is different than expected\n");
         return FALSE;
@@ -172,9 +154,9 @@ typedef BSTR (__stdcall * Test_Del_MarshalStrB_InOut)(/*[in,out]*/ BSTR s);
 extern "C" DLL_EXPORT  BOOL __stdcall ReverseP_MarshalStrB_InOut(Test_Del_MarshalStrB_InOut d, /*[in]*/ BSTR s)
 {
     BSTR ret = d((BSTR)s);
-    LPWSTR expected = (LPWSTR)L("Return");
+    WCHAR expected[] = W("Return");
     size_t lenret = TP_SysStringByteLen(ret);
-    size_t lenexpected = TP_slen(expected) * 2;
+    size_t lenexpected = sizeof(expected) - sizeof(WCHAR);
 
     if((lenret != lenexpected)||(memcmp(ret,expected,lenret)!=0))
     {
@@ -182,9 +164,9 @@ extern "C" DLL_EXPORT  BOOL __stdcall ReverseP_MarshalStrB_InOut(Test_Del_Marsha
         return FALSE;
     }
 
-    LPWSTR expectedchange = (LPWSTR)L("m");
+    WCHAR expectedchange[] = W("m");
     size_t lenstr = TP_SysStringByteLen(s);
-    size_t lenexpectedchange = TP_slen(expectedchange) * 2;
+    size_t lenexpectedchange = sizeof(expectedchange) - sizeof(WCHAR);
     
     if((lenstr != lenexpectedchange)||(memcmp(s,expectedchange,lenstr)!=0))
     {

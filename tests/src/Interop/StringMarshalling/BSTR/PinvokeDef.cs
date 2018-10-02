@@ -36,9 +36,6 @@ namespace NativeDefs
         [return: MarshalAs(UnmanagedType.BStr)]
         public static extern string Marshal_Out([Out][MarshalAs(UnmanagedType.BStr)]string s);
 
-        [DllImport(NativeBinaryName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int Writeline(string format, int i, char c, double d, short s, uint u);
-
         [DllImport(NativeBinaryName)]
         [return: MarshalAs(UnmanagedType.BStr)]
         public static extern string MarshalPointer_InOut([MarshalAs(UnmanagedType.BStr)]ref string s);
